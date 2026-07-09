@@ -58,3 +58,4 @@ Documentation/*
 # install-local-protocol.sh
 /composer-local-protocol.*
 master-logs/
+*:Zone.Identifier
