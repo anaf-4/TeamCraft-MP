@@ -1,35 +1,35 @@
 # Security Policy
 
-## Reporting a Vulnerability
+이 프로젝트는 [PocketMine-MP](https://github.com/pmmp/PocketMine-MP)의 비공식 개인 포크입니다. 보안 이슈는 원본 PMMP 팀이 아니라 이 저장소(TeamCraft-MP) 관리자에게 직접 보고해주세요.
 
-### Report via GitHub
+## 취약점 보고하기
 
-Send a _**private security report**_ by going to https://github.com/pmmp/PocketMine-MP/security and clicking the "Report a vulnerability" button.
+### GitHub을 통한 보고 (권장)
+
+https://github.com/anaf-4/TeamCraft-MP/security 에서 "Report a vulnerability" 버튼을 눌러 **비공개 보안 리포트**를 보내주세요.
 
 > [!WARNING]
-> **DO NOT report vulnerabilities on the Issues tab. Report them in the Security tab ONLY.**
-> 
-> The issue tracker is public to view, which means that malicious actors may learn about exploits from a public issue.
+> **Issues 탭에는 취약점을 보고하지 마세요. 반드시 Security 탭을 이용해주세요.**
 >
-> **You may put live PocketMine-MP servers at risk by reporting a vulnerability on the GitHub issue tracker.**
+> 이슈 트래커는 누구나 볼 수 있어서, 공개된 이슈를 통해 악의적인 사용자가 취약점을 알게 될 수 있습니다.
+>
+> **GitHub 이슈 트래커에 취약점을 공개로 보고하면 실제로 운영 중인 서버들이 위험에 노출될 수 있습니다.**
 
-### Report via email
+### 그 외 방법
 
-If you can't or don't want to use the GitHub system, you can also **contact us** by sending an email to [**security@pmmp.io**](mailto:security@pmmp.io).
-Include the following information:
+GitHub Security 탭 사용이 어려우시면, 저장소의 Discord(준비 중) 또는 이슈 트래커의 관리자 계정으로 연락 방법을 문의해주세요.
 
-- Version of PocketMine-MP
-- Detailed description of the vulnerability (e.g. how to exploit it, what the effects are)
-- Your GitHub username, if you wish to be credited for reporting the problem in the security advisory
-
-Please note that we can't guarantee a reply to every email.
+포함해주시면 좋은 정보:
+- 사용 중인 TeamCraft-MP 버전
+- 취약점에 대한 상세 설명 (재현 방법, 영향 범위 등)
+- 보고자로서 크레딧을 원하실 경우 GitHub 사용자명
 
 ## FAQ
-### Do you offer a bug bounty?
-No.
 
-### How soon can I expect a fix for a vulnerability I've reported?
-This depends on the nature of the problem. We can't provide any general ETA (nor would it be wise to provide one).
-In general, it depends on when developers have time to look into the problem, how complex the problem is to fix, and how many users it impacts.
+### 버그 바운티를 제공하나요?
 
-When a fix for a severe vulnerability is pushed, a patch release for the target version will usually be released within 24 hours so that users can update.
+아니요. 이 프로젝트는 개인이 취미로 운영하는 비공식 포크라, 금전적 보상은 제공하지 않습니다.
+
+### 보고한 취약점은 얼마나 빨리 고쳐지나요?
+
+문제의 성격에 따라 다릅니다. 별도의 유지보수 인력이 없는 개인 프로젝트이므로, 원본 PMMP 팀 수준의 대응 속도를 보장할 수는 없습니다. 다만 심각도가 높은 취약점은 최대한 우선적으로 처리하려고 합니다.
