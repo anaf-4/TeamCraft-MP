@@ -317,6 +317,7 @@ function printWorkerMessage(array $msg): void {
 	$label = match ($msg["type"]) {
 		1 => "STATS",
 		2 => "ERROR",
+		3 => "INFO",
 		default => "UNKNOWN(" . $msg["type"] . ")",
 	};
 	fwrite(STDOUT, "[worker:$label] " . $msg["payload"] . "\n");
