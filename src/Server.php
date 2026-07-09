@@ -1048,7 +1048,7 @@ class Server{
 			$this->worldManager->setAutoSave($this->configGroup->getConfigBool(ServerProperties::AUTO_SAVE, $this->worldManager->getAutoSave()));
 			$this->worldManager->setAutoSaveInterval($this->configGroup->getPropertyInt(Yml::TICKS_PER_AUTOSAVE, $this->worldManager->getAutoSaveInterval()));
 
-			$this->updater = new UpdateChecker($this, $this->configGroup->getPropertyString(Yml::AUTO_UPDATER_HOST, "update.pmmp.io"));
+			$this->updater = new UpdateChecker($this, $this->configGroup->getPropertyString(Yml::AUTO_UPDATER_HOST, "update.teamcraft-mp.io"));
 
 			$this->queryInfo = new QueryInfo($this);
 
@@ -1099,11 +1099,7 @@ class Server{
 			$splash = "\n\n";
 			foreach([
 				KnownTranslationFactory::pocketmine_server_url_discord("{$highlight}https://discord.pmmp.io{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_docs("{$highlight}https://doc.pmmp.io{$reset}"),
 				KnownTranslationFactory::pocketmine_server_url_sourceCode("{$highlight}{$github}{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_freePlugins("{$highlight}https://poggit.pmmp.io/plugins{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_donations("{$highlight}https://patreon.com/pocketminemp{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_translations("{$highlight}https://translate.pocketmine.net{$reset}"),
 				KnownTranslationFactory::pocketmine_server_url_bugReporting("{$highlight}{$github}/issues{$reset}")
 			] as $link){
 				$splash .= "- " . $this->language->translate($link) . "\n";

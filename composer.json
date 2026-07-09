@@ -1,8 +1,8 @@
 {
-   "name": "pocketmine/pocketmine-mp",
-   "description": "A server software for Minecraft: Bedrock Edition written in PHP",
+   "name": "teamcraft/teamcraft-mp",
+   "description": "A server software for Minecraft: Bedrock Edition written in PHP, forked from PocketMine-MP",
    "type": "project",
-   "homepage": "https://pmmp.io",
+   "homepage": "https://github.com/anaf-4/TeamCraft-MP",
    "license": "LGPL-3.0",
    "require": {
       "php": "^8.1",
