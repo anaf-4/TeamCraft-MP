@@ -61,4 +61,3 @@ Discord 서버 링크는 준비 중입니다 (추후 업데이트 예정).
 이 프로젝트는 LGPL-3.0 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](/LICENSE) 파일을 참고해주세요.
 
 TeamCraft-MP는 PocketMine-MP 팀과 무관한 비공식 포크이며, Mojang과도 관련이 없습니다. 모든 브랜드와 상표는 각 소유자에게 귀속됩니다.
-TeamCraft-MP는 PocketMine-MP 팀과 무관한 비공식 포크이며, Mojang과도 관련이 없습니다. 모든 브랜드와 상표는 각 소유자에게 귀속됩니다.
