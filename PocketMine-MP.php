@@ -322,8 +322,10 @@ function decodeWorkerFrames(string &$buffer): array {
 $workerReadBuffer = "";
 
 function printWorkerMessage(array $msg): void {
+	if ($msg["type"] === 1) {
+		return; // STATS는 콘솔에 안 띄움
+	}
 	$label = match ($msg["type"]) {
-		1 => "STATS",
 		2 => "ERROR",
 		3 => "INFO",
 		default => "UNKNOWN(" . $msg["type"] . ")",
