@@ -32,7 +32,7 @@ use function str_repeat;
 final class VersionInfo{
 	public const NAME = "TeamCraft-MP";
 	public const BASE_VERSION = "0.0.1";
-	public const API_VERSION = "5.0.0"; // PMMP 5.x 플러그인 API 호환 버전
+	public const API_VERSION = "5.44.4"; // 포크 시점 PMMP 실제 API 버전 (pmmp 관례: API 버전 = 서버 버전)
 	public const IS_DEVELOPMENT_BUILD = false;
 	public const BUILD_CHANNEL = "stable";
 	public const GITHUB_URL = "https://github.com/anaf-4/TeamCraft-MP";
