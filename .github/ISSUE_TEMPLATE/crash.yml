@@ -1,28 +1,24 @@
 name: Crash
-description: Report a crash in PocketMine-MP (not plugins)
+description: Report a crash in TeamCraft-MP (not plugins)
 title: Server crashed
 body:
   - type: markdown
     attributes:
       value: |
         > [!CAUTION]
-        > If the crash can be triggered over the network (e.g. by a player / hack client), DO NOT report it here.
-        > 
-        > Read our [Security Policy](https://github.com/pmmp/PocketMine-MP/blob/stable/SECURITY.md) first.
-
-        > [!TIP]
-        > Don't paste raw crashdump data into the issue.
+        > 크래시가 네트워크를 통해 유발될 수 있는 것(플레이어/핵클라이언트에 의한 것)이라면 여기에 올리지 마세요.
         >
-        > Instead, submit the crashdump `.log` file to the [Crash Archive](https://crash.pmmp.io/submit).
-        > If you can't submit the crashdump to the Crash Archive, paste it on a site like [GitHub Gist](https://gist.github.com) or [Pastebin](https://pastebin.com).
-
+        > 먼저 [Security Policy](https://github.com/anaf-4/TeamCraft-MP/blob/stable/SECURITY.md)를 읽어주세요.
+        > [!TIP]
+        > 크래시덤프 원문을 이슈에 그대로 붙여넣지 마세요.
+        >
+        > 대신 [GitHub Gist](https://gist.github.com)나 [Pastebin](https://pastebin.com) 같은 곳에 올리고 링크를 공유해주세요.
   - type: input
     id: crashdump-url
     attributes:
       label: Link to crashdump
     validations:
       required: true
-
   - type: textarea
     attributes:
       label: Additional comments (optional)

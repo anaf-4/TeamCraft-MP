@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Help & support on Discord
-    url: https://discord.gg/bmSAZBG
-    about: We don't accept support requests on the issue tracker. Please try asking on Discord instead.
+  - name: Help & support on Discord (준비 중)
+    url: https://github.com/anaf-4/TeamCraft-MP
+    about: TeamCraft-MP Discord는 아직 준비 중입니다. 그동안은 GitHub Discussions/Issues를 이용해주세요.
   - name: Documentation
-    url: https://pmmp.rtfd.io
-    about: PocketMine-MP documentation
+    url: https://github.com/anaf-4/TeamCraft-MP#readme
+    about: TeamCraft-MP README 및 문서

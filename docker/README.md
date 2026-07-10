@@ -1,101 +1,64 @@
-# PocketMine-MP Docker image
-This folder contains the files used to build and test the `pmmp/pocketmine-mp` Docker image.
+# TeamCraft-MP Docker image
 
-Docker is an easy, safe way to run software in a container where it can't affect anything else on your machine.
-You don't need to build any dependencies, and updating is as simple as changing the version number of the image you're using.
+이 폴더는 원본 PocketMine-MP의 `pmmp/pocketmine-mp` Docker 이미지 빌드/테스트 파일을 그대로 물려받은 것입니다.
 
-## Pre-requisites
-To install Docker, refer to the [official Docker docs](https://docs.docker.com/engine/install/).
+> [!WARNING]
+> **TeamCraft-MP는 아직 자체 Docker Hub/GHCR 이미지를 배포하지 않습니다.**
+> 아래 안내는 원본 PMMP 이미지(`ghcr.io/pmmp/pocketmine-mp`) 사용법을 참고용으로 남겨둔 것이며,
+> TeamCraft-MP 자체 이미지가 준비되면 이 문서를 갱신할 예정입니다.
+> 지금 TeamCraft-MP를 Docker로 돌리고 싶다면, 이 폴더의 `Dockerfile`을 직접 빌드해서 사용해주세요:
+>
+> ```bash
+> docker build -t teamcraft-mp:local --build-arg GIT_HASH=$(git rev-parse HEAD) .
+> ```
 
-## Running PocketMine-MP from Docker (using Docker Hub)
-This is really easy once you have `docker` installed.
+Docker는 컨테이너 안에서 안전하게 소프트웨어를 실행하는 방법입니다. 의존성을 직접 빌드할 필요 없이, 이미지 버전만 바꾸면 업데이트도 간단합니다.
 
-```
+## 사전 준비물
+[공식 Docker 문서](https://docs.docker.com/engine/install/)를 참고해 Docker를 설치해주세요.
+
+## 로컬에서 빌드한 이미지 실행하기
+
+```bash
 mkdir wherever-you-want
 cd wherever-you-want
 mkdir data plugins
 sudo chown -R 1000:1000 data plugins
-docker run -it -p 19132:19132/udp -v $PWD/data:/data -v $PWD/plugins:/plugins ghcr.io/pmmp/pocketmine-mp
+docker run -it -p 19132:19132/udp -v $PWD/data:/data -v $PWD/plugins:/plugins teamcraft-mp:local
 ```
 
-To run a specific version, just add it to the end of the command, like this:
-```
-docker run -it -p 19132:19132/udp -v $PWD/data:/data -v $PWD/plugins:/plugins ghcr.io/pmmp/pocketmine-mp:4.0.0
-```
+## 서버 포트 변경
+`server.properties`를 수정하는 대신, Docker의 포트 매핑을 사용하세요.
 
-## Changing the server port
-Docker allows you to map ports, so you don't need to edit `server.properties`.
+위 실행 명령어에서 `19132:19132/udp`를 `<원하는 포트>:19132/udp`로 바꾸면 됩니다. **뒤쪽 숫자는 바꾸지 마세요.**
 
-In the run command shown above, change `19132:19132/udp` to `<port number you want>:19132/udp`. **Note: Do not change the second number.**
+## 서버 데이터 수정
+서버 데이터(월드, `server.properties` 등)는 위에서 만든 `data` 폴더에 저장됩니다.
 
-> [!WARNING]
-> Do not change the port in `server.properties`. This is unnecessary when using Docker and will make things more complicated.
-
-## Editing the server data
-The server data (e.g. worlds, `server.properties`, etc.) will be stored in the `data` folder you created above.
-
-**Note: If you add new files (e.g. a world), don't forget to change the ownership of the file/folder to `1000:1000`**:
-```
-sudo chown -R 1000:1000 <file/folder you added>
-```
-This is needed to make the server able to access the file/folder.
-
-## Adding plugins
-Plugins can be added by putting them in `plugins` folder you created earlier.
-
-
-**Note: If you add new files, don't forget to change the ownership of the file/folder to `1000:1000`:
-```
-sudo chown -R 1000:1000 <file/folder you added>
-```
-This is needed to make the server able to access the file/folder.
-
-## Run the server in the background
-To run the server in the background, simply change `-it` to `-itd` in the last command above.
-This will run the server in the background even if you closed console. (No need to `screen`/`tmux` anymore!)
-
-### Opening the console of the server
-Use `docker ps` to see a list of running containers. It will look like this:
-```
-user@DYLANS-PC:~/pm-docker-test$ docker ps
-CONTAINER ID   IMAGE                      COMMAND                  CREATED         STATUS         PORTS                                                                              NAMES
-dc20edd3dd62   pmmp/pocketmine-mp:4.0.0   "start-pocketmine"       7 seconds ago   Up 6 seconds   19132/tcp, 0.0.0.0:19132-19133->19132-19133/udp, :::19132-19133->19132-19133/udp   brave_dijkstra
-```
-In this case, the container name is `brave_dijkstra`, but it might be something else in your case.
-
-To open the console, run the following command:
-
-```
-docker attach <container name you saw in docker ps>
+새 파일/폴더를 추가했다면 소유권을 맞춰주세요:
+```bash
+sudo chown -R 1000:1000 <추가한 파일/폴더>
 ```
 
-To leave the console, just press `Ctrl p` `Ctrl q`.
+## 플러그인 추가
+`plugins` 폴더에 넣어주시면 됩니다 (마찬가지로 소유권 조정 필요).
 
-### Viewing the logs
-To see the logs, run the following command:
-```
-docker logs --tail=100 <container name you saw in docker ps>
-```
-Change `--tail=100` to the number of recent lines in the log you want to see.
+## 백그라운드 실행
+실행 명령어의 `-it`를 `-itd`로 바꾸면 콘솔을 닫아도 백그라운드에서 계속 실행됩니다.
 
-## Adding plugins from Poggit
-If the `$POCKETMINE_PLUGINS` is set, the container will auto-download the plugins specified from https://poggit.pmmp.io
-before starting PocketMine-MP.
-
-The list of plugins should be given in the format `PluginOne:1.2.3 PluginTwo:4.5.6`. The version part (`:4.5.6`) is optional.
-
-> [!CAUTION]
-> Plugins won't be redownloaded if they're already in the `plugins` volume, even if the version is different.
-> If you need to update a plugin, you'll need to delete the old plugin `.phar` first.
+콘솔 다시 열기: `docker attach <컨테이너 이름>` (나가기: `Ctrl p` → `Ctrl q`)
+로그 보기: `docker logs --tail=100 <컨테이너 이름>`
 
 ## Volumes
-- `/data` is a read-write data directory where PocketMine stores all data in.
-	This includes PocketMine config files, player data, worlds and plugin config files/data.
-- `/plugins` is a read-only data directory where PocketMine loads plugins from.
+- `/data` - 읽기/쓰기, 설정/플레이어 데이터/월드/플러그인 설정 저장
+- `/plugins` - 읽기 전용, 플러그인 로드 위치
 
-## Advanced usage: Passing args to PocketMine-MP.phar inside the container
-The `POCKETMINE_ARGS` environment variable will be passed to `PocketMine-MP.phar` when run.
+## 고급: phar에 인자 전달하기
+`POCKETMINE_ARGS` 환경변수가 `PocketMine-MP.phar` 실행 시 그대로 전달됩니다.
 
-## Building this image
-The Dockerfile requires a build-arg `GIT_HASH` to fill the git hash metadata when building `PocketMine-MP.phar`.
-This ensures that `/version`, crash reports, logs etc. report the correct server version.
+## 참고: 삼각 멀티프로세스 런처와 Docker
+
+TeamCraft-MP의 `PocketMine-MP.php` 런처(NetworkWorker + phar 동시 구동)는 아직 이 Docker 이미지에 통합되지 않았습니다. 현재 이미지는 원본과 동일하게 `PocketMine-MP.phar`를 직접 실행하는 방식입니다.
+
+## 이미지 빌드하기
+Dockerfile은 `PocketMine-MP.phar` 빌드 시 git 해시 메타데이터를 채우기 위해 `GIT_HASH` build-arg가 필요합니다. 이는 `/version`, 크래시 리포트, 로그 등에 정확한 서버 버전이 표시되도록 하기 위함입니다.
