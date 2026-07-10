@@ -32,8 +32,8 @@ use function str_repeat;
 final class VersionInfo{
 	public const NAME = "TeamCraft-MP";
 	public const BASE_VERSION = "0.0.1";
-	public const IS_DEVELOPMENT_BUILD = true;
-	public const BUILD_CHANNEL = "alpha";
+	public const IS_DEVELOPMENT_BUILD = false;
+	public const BUILD_CHANNEL = "stable";
 	public const GITHUB_URL = "https://github.com/anaf-4/TeamCraft-MP";
 
 	/**
