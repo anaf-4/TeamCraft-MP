@@ -3,11 +3,11 @@
 /**
  * TeamCraft-MP Triangle Multi-Process Launcher
  *
- * 마스터 프로세스: 단일 CMD 창으로 NetworkWorker + TeamCraft-MP.phar를 자식 프로세스로 구동합니다.
+ * 마스터 프로세스: 단일 CMD 창으로 NetworkWorker + PocketMine-MP.phar를 자식 프로세스로 구동합니다.
  *
  * 중요한 설계 결정 (아키텍처 노트):
  * -----------------------------------------------------------------------
- * TeamCraft-MP.phar는 STDIN으로 "게임 네트워크 패킷"을 받지 않습니다.
+ * PocketMine-MP.phar는 STDIN으로 "게임 네트워크 패킷"을 받지 않습니다.
  * phar 내부의 RakLib 스레드가 자체적으로 UDP 소켓을 여는 구조이기 때문에,
  * 외부에서 패킷을 주입할 훅이 존재하지 않습니다. STDIN/STDOUT은 콘솔
  * 명령어(관리자 커맨드) 용도로만 사용됩니다.
@@ -21,11 +21,14 @@
  *     사용하는 것이라 phar 소스는 완전히 원본 그대로입니다.
  *   - NetworkWorker는 패킷을 해석하지 않고 순수 UDP 릴레이(NAT처럼)만
  *     수행하여 공개 포트 <-> phar 내부 포트 사이를 연결합니다.
- *   - 마스터는 phar의 STDIN만 pipe로 passthrough하고, STDOUT/STDERR은
- *     로그 파일로 리다이렉트한 뒤 주기적으로 tail(파일 끝부분 읽기)합니다.
- *     (Windows의 proc_open 파이프는 stream_set_blocking(false)가 제대로
- *     지원되지 않아 fread()가 무한 대기하는 문제가 있어, 파일 기반 방식으로
- *     OS 무관하게 안정적으로 동작하도록 설계했습니다.)
+ *   - 마스터는 phar의 STDIN을 직접 상속(inherit)시켜 콘솔 명령어가 OS 레벨에서
+ *     바로 전달되게 하고, STDOUT/STDERR은 로그 파일로 리다이렉트한 뒤 주기적으로
+ *     tail(파일 끝부분 읽기)합니다.
+ *     (Windows의 proc_open 파이프는 stream_set_blocking(false)가 출력 쪽도,
+ *     입력 쪽도 제대로 지원되지 않습니다. 출력은 파일 tail 방식으로, 입력은
+ *     파이프 대신 STDIN을 직접 상속시키는 방식으로 각각 우회했습니다 - 마스터가
+ *     콘솔 입력을 폴링하면 Windows에서 Enter를 누르기 전까지 전체 루프가
+ *     멈춰버리는 문제가 있었기 때문입니다.)
  * -----------------------------------------------------------------------
  */
 
@@ -181,9 +184,14 @@ function readOriginalPublicPortV6(string $path): int {
 	return 19133;
 }
 
-function spawnProcess(array $cmd, ?string $cwd, string $stdoutLog, string $stderrLog): array {
+function spawnProcess(array $cmd, ?string $cwd, string $stdoutLog, string $stderrLog, string $stdinMode = "pipe"): array {
 	$descriptors = [
-		0 => ["pipe", "r"], // stdin (명령어 전달용, 쓰기만 하므로 파이프로도 안전)
+		// "inherit" 모드: 마스터의 콘솔 STDIN을 자식 프로세스가 직접 물게 함.
+		// Windows에서 fread(STDIN, ...)의 논블로킹 모드가 제대로 지원되지 않아,
+		// 마스터가 폴링 방식으로 콘솔 입력을 읽으려 하면 Enter를 누르기 전까지
+		// 전체 틱 루프(로그 출력 포함)가 멈춰버리는 문제가 있었음. 콘솔 입력이
+		// 필요한 phar 프로세스에는 이 모드를 사용해 그 문제를 근본적으로 피함.
+		0 => $stdinMode === "inherit" ? STDIN : ["pipe", "r"],
 		1 => ["file", $stdoutLog, "a"], // stdout -> 로그 파일
 		2 => ["file", $stderrLog, "a"], // stderr -> 로그 파일
 	];
@@ -193,8 +201,8 @@ function spawnProcess(array $cmd, ?string $cwd, string $stdoutLog, string $stder
 		fwrite(STDERR, "[Master] 프로세스 실행 실패: " . implode(" ", $cmd) . "\n");
 		exit(1);
 	}
-	// stdin 파이프만 논블로킹 전환 대상 (읽기는 이제 파일 tail 방식이라 불필요)
-	if (isset($pipes[0])) {
+	// stdin이 실제 파이프로 생성된 경우에만 논블로킹 전환 (inherit 모드는 해당 없음)
+	if ($stdinMode !== "inherit" && isset($pipes[0])) {
 		stream_set_blocking($pipes[0], false);
 	}
 	return [$proc, $pipes];
@@ -314,9 +322,6 @@ function decodeWorkerFrames(string &$buffer): array {
 $workerReadBuffer = "";
 
 function printWorkerMessage(array $msg): void {
-	if ($msg["type"] === 1) {
-		return;
-	}
 	$label = match ($msg["type"]) {
 		1 => "STATS",
 		2 => "ERROR",
@@ -358,7 +363,7 @@ if (stripos(PHP_OS, "WIN") === 0) {
 // NetworkWorker가 내부 소켓을 준비할 시간을 살짝 줌
 usleep(300_000);
 
-// 2) TeamCraft-MP.phar 기동 - server.properties는 원본 그대로 두고,
+// 2) PocketMine-MP.phar 기동 - server.properties는 원본 그대로 두고,
 //    ServerConfigGroup의 getopt() 기반 오버라이드로 포트만 내부용으로 바꿈.
 //    (src/ServerConfigGroup.php: getopt("", ["server-port::"]) 확인됨)
 //    이 방식은 phar 소스를 전혀 건드리지 않는, pmmp가 공식 지원하는 오버라이드 경로임.
@@ -370,15 +375,13 @@ usleep(300_000);
 	"--no-wizard",
 	"--server-port=" . INTERNAL_PORT_V4,
 	"--server-portv6=" . INTERNAL_PORT_V6,
-], $rootDir, $pharLogPath, $pharErrLogPath);
+], $rootDir, $pharLogPath, $pharErrLogPath, "inherit");
 
 $pharLogPos = 0;
 $pharErrLogPos = 0;
 $workerLogPos = 0;
 
-fwrite(STDOUT, "[Master] 두 자식 프로세스 기동 완료. 콘솔 입력을 phar로 전달합니다 (예: stop, list, op <player>)\n");
-
-stream_set_blocking(STDIN, false);
+fwrite(STDOUT, "[Master] 두 자식 프로세스 기동 완료. 콘솔은 phar가 직접 사용합니다 (예: stop, list, op <player>)\n");
 
 // --- 메인 틱 루프 (20 TPS) ---
 while (!$shuttingDown) {
@@ -420,11 +423,11 @@ while (!$shuttingDown) {
 		}
 	}
 
-	// 유저가 CMD 창에 입력한 관리자 명령어를 phar STDIN으로 전달
-	$userInput = @fread(STDIN, 4096);
-	if ($userInput !== false && $userInput !== "") {
-		@fwrite($pharPipes[0], $userInput);
-	}
+	// 참고: 콘솔 입력은 더 이상 마스터가 폴링해서 phar로 전달하지 않습니다.
+	// phar 프로세스가 마스터의 콘솔 STDIN을 직접 물고 있어서(inherit 모드),
+	// 사용자가 입력한 명령어는 OS 레벨에서 바로 phar로 전달됩니다.
+	// (Windows에서 fread(STDIN)을 매 틱 폴링하면 Enter를 누르기 전까지
+	// 전체 루프가 멈춰버리는 문제가 있어 이 방식으로 변경했습니다.)
 
 	// 약 5초(100틱)마다 로그 파일 크기를 확인해 필요하면 회전
 	static $tickCounter = 0;
