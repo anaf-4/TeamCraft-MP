@@ -1,5 +1,5 @@
 @echo off
-TITLE TeamCraft-MP
+TITLE TeamCraft-MP - Auto Restart
 cd /d %~dp0
 
 set PHP_BINARY=bin\php\php.exe
@@ -19,8 +19,13 @@ if not exist %LAUNCHER_FILE% (
     exit /b 1
 )
 
-%PHP_BINARY% %LAUNCHER_FILE%
-
+:loop
 echo.
-echo Server stopped.
-pause
+echo [%date% %time%] Starting TeamCraft-MP (launcher: %LAUNCHER_FILE%)...
+echo.
+%PHP_BINARY% %LAUNCHER_FILE%
+echo.
+echo [%date% %time%] Server stopped. Restarting in 5 seconds...
+echo (Ctrl+C twice now to cancel auto-restart and exit)
+timeout /t 5 /nobreak
+goto loop
