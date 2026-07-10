@@ -21,14 +21,17 @@
  *     사용하는 것이라 phar 소스는 완전히 원본 그대로입니다.
  *   - NetworkWorker는 패킷을 해석하지 않고 순수 UDP 릴레이(NAT처럼)만
  *     수행하여 공개 포트 <-> phar 내부 포트 사이를 연결합니다.
- *   - 마스터는 phar의 STDIN을 직접 상속(inherit)시켜 콘솔 명령어가 OS 레벨에서
- *     바로 전달되게 하고, STDOUT/STDERR은 로그 파일로 리다이렉트한 뒤 주기적으로
- *     tail(파일 끝부분 읽기)합니다.
- *     (Windows의 proc_open 파이프는 stream_set_blocking(false)가 출력 쪽도,
- *     입력 쪽도 제대로 지원되지 않습니다. 출력은 파일 tail 방식으로, 입력은
- *     파이프 대신 STDIN을 직접 상속시키는 방식으로 각각 우회했습니다 - 마스터가
- *     콘솔 입력을 폴링하면 Windows에서 Enter를 누르기 전까지 전체 루프가
- *     멈춰버리는 문제가 있었기 때문입니다.)
+ *   - phar는 STDIN/STDOUT/STDERR을 마스터의 콘솔에 그대로 상속(inherit)받습니다.
+ *     즉 phar를 직접 실행했을 때와 똑같은 경험(상태표시줄 갱신, 콘솔 명령어
+ *     입력 등)을 그대로 재현합니다. (참고: STDIN만 상속하고 STDOUT을 파일로
+ *     리다이렉트하는 어중간한 상태에서는, pmmp가 "콘솔에 완전히 붙어있지 않다"고
+ *     판단해 별도의 "Console Reader" 창을 새로 띄우는 부작용이 있었습니다.
+ *     세 스트림을 전부 상속시키면 이 문제가 사라지고, 상태표시줄도 정상 갱신됩니다.
+ *     pmmp 자체가 이미 server.log에 로그를 저장하므로, 마스터가 별도로 phar의
+ *     출력을 파일로 받아 로테이션할 필요도 없습니다 - 그래서 phar에 대해서는
+ *     이제 로그 파일 기반 tail 방식을 쓰지 않습니다. NetworkWorker는 사용자
+ *     상호작용이 필요 없는 백그라운드 프로세스라 기존 파일 tail 방식을 그대로
+ *     유지합니다.)
  * -----------------------------------------------------------------------
  */
 
@@ -50,8 +53,6 @@ if (!is_dir($logDir)) {
 if (!is_dir($logArchiveDir)) {
 	mkdir($logArchiveDir, 0777, true);
 }
-$pharLogPath = $logDir . DIRECTORY_SEPARATOR . "phar.log";
-$pharErrLogPath = $logDir . DIRECTORY_SEPARATOR . "phar-err.log";
 $workerLogPath = $logDir . DIRECTORY_SEPARATOR . "worker.log";
 
 const LOG_MAX_BYTES = 10 * 1024 * 1024; // 10MB - 이보다 커지면 실행 중에도 자동 회전
@@ -119,10 +120,8 @@ function rotateLogIfTooBig(string $path, string $archiveDir, int &$posRef): void
 
 // 이전 실행의 로그를 보관하고, 오래된 보관본은 정리
 $startupTimestamp = date("Ymd-His");
-foreach ([$pharLogPath, $pharErrLogPath, $workerLogPath] as $path) {
-	archiveLogFile($path, $logArchiveDir, $startupTimestamp);
-	file_put_contents($path, "");
-}
+archiveLogFile($workerLogPath, $logArchiveDir, $startupTimestamp);
+file_put_contents($workerLogPath, "");
 pruneOldLogArchives($logArchiveDir, LOG_ARCHIVE_KEEP);
 
 /** @var resource|null */
@@ -184,14 +183,9 @@ function readOriginalPublicPortV6(string $path): int {
 	return 19133;
 }
 
-function spawnProcess(array $cmd, ?string $cwd, string $stdoutLog, string $stderrLog, string $stdinMode = "pipe"): array {
+function spawnProcess(array $cmd, ?string $cwd, string $stdoutLog, string $stderrLog): array {
 	$descriptors = [
-		// "inherit" 모드: 마스터의 콘솔 STDIN을 자식 프로세스가 직접 물게 함.
-		// Windows에서 fread(STDIN, ...)의 논블로킹 모드가 제대로 지원되지 않아,
-		// 마스터가 폴링 방식으로 콘솔 입력을 읽으려 하면 Enter를 누르기 전까지
-		// 전체 틱 루프(로그 출력 포함)가 멈춰버리는 문제가 있었음. 콘솔 입력이
-		// 필요한 phar 프로세스에는 이 모드를 사용해 그 문제를 근본적으로 피함.
-		0 => $stdinMode === "inherit" ? STDIN : ["pipe", "r"],
+		0 => ["pipe", "r"],
 		1 => ["file", $stdoutLog, "a"], // stdout -> 로그 파일
 		2 => ["file", $stderrLog, "a"], // stderr -> 로그 파일
 	];
@@ -201,11 +195,30 @@ function spawnProcess(array $cmd, ?string $cwd, string $stdoutLog, string $stder
 		fwrite(STDERR, "[Master] 프로세스 실행 실패: " . implode(" ", $cmd) . "\n");
 		exit(1);
 	}
-	// stdin이 실제 파이프로 생성된 경우에만 논블로킹 전환 (inherit 모드는 해당 없음)
-	if ($stdinMode !== "inherit" && isset($pipes[0])) {
+	if (isset($pipes[0])) {
 		stream_set_blocking($pipes[0], false);
 	}
 	return [$proc, $pipes];
+}
+
+/**
+ * phar 전용: STDIN/STDOUT/STDERR을 마스터의 콘솔에 통째로 상속시켜 실행합니다.
+ * "phar를 직접 실행하는 것"과 완전히 동일한 콘솔 경험(상태표시줄, 명령어 입력 등)을
+ * 만들기 위한 함수입니다. 파이프가 전혀 생성되지 않으므로 반환되는 pipes는 항상 빈 배열입니다.
+ */
+function spawnProcessFullInherit(array $cmd, ?string $cwd): array {
+	$descriptors = [
+		0 => STDIN,
+		1 => STDOUT,
+		2 => STDERR,
+	];
+	$pipes = [];
+	$proc = proc_open($cmd, $descriptors, $pipes, $cwd);
+	if ($proc === false) {
+		fwrite(STDERR, "[Master] 프로세스 실행 실패: " . implode(" ", $cmd) . "\n");
+		exit(1);
+	}
+	return [$proc, []];
 }
 
 /**
@@ -369,7 +382,7 @@ usleep(300_000);
 //    ServerConfigGroup의 getopt() 기반 오버라이드로 포트만 내부용으로 바꿈.
 //    (src/ServerConfigGroup.php: getopt("", ["server-port::"]) 확인됨)
 //    이 방식은 phar 소스를 전혀 건드리지 않는, pmmp가 공식 지원하는 오버라이드 경로임.
-[$pharProc, $pharPipes] = spawnProcess([
+[$pharProc, $pharPipes] = spawnProcessFullInherit([
 	$phpBinary,
 	"-d",
 	"phar.readonly=0",
@@ -377,13 +390,11 @@ usleep(300_000);
 	"--no-wizard",
 	"--server-port=" . INTERNAL_PORT_V4,
 	"--server-portv6=" . INTERNAL_PORT_V6,
-], $rootDir, $pharLogPath, $pharErrLogPath, "inherit");
+], $rootDir);
 
-$pharLogPos = 0;
-$pharErrLogPos = 0;
 $workerLogPos = 0;
 
-fwrite(STDOUT, "[Master] 두 자식 프로세스 기동 완료. 콘솔은 phar가 직접 사용합니다 (예: stop, list, op <player>)\n");
+fwrite(STDOUT, "[Master] 두 자식 프로세스 기동 완료. phar가 콘솔을 직접 사용합니다 (예: stop, list, op <player>)\n");
 
 // --- 메인 틱 루프 (20 TPS) ---
 while (!$shuttingDown) {
@@ -407,16 +418,8 @@ while (!$shuttingDown) {
 		break;
 	}
 
-	// phar의 콘솔 출력(로그 파일)을 그대로 마스터 창에 중계 (단일 CMD 창 요구사항)
-	$pharOut = tailLogFile($pharLogPath, $pharLogPos);
-	if ($pharOut !== "") {
-		fwrite(STDOUT, $pharOut);
-	}
-	$pharErr = tailLogFile($pharErrLogPath, $pharErrLogPos);
-	if ($pharErr !== "") {
-		fwrite(STDOUT, "[phar:err] " . $pharErr);
-	}
 	// NetworkWorker의 로그/통계 출력도 함께 중계 (바이너리 프레임 디코딩)
+	// (phar는 이제 콘솔을 직접 상속받아 스스로 출력하므로, 마스터가 따로 중계할 필요 없음)
 	$workerChunk = tailLogFile($workerLogPath, $workerLogPos);
 	if ($workerChunk !== "") {
 		$workerReadBuffer .= $workerChunk;
@@ -425,18 +428,10 @@ while (!$shuttingDown) {
 		}
 	}
 
-	// 참고: 콘솔 입력은 더 이상 마스터가 폴링해서 phar로 전달하지 않습니다.
-	// phar 프로세스가 마스터의 콘솔 STDIN을 직접 물고 있어서(inherit 모드),
-	// 사용자가 입력한 명령어는 OS 레벨에서 바로 phar로 전달됩니다.
-	// (Windows에서 fread(STDIN)을 매 틱 폴링하면 Enter를 누르기 전까지
-	// 전체 루프가 멈춰버리는 문제가 있어 이 방식으로 변경했습니다.)
-
 	// 약 5초(100틱)마다 로그 파일 크기를 확인해 필요하면 회전
 	static $tickCounter = 0;
 	$tickCounter++;
 	if ($tickCounter % 100 === 0) {
-		rotateLogIfTooBig($pharLogPath, $logArchiveDir, $pharLogPos);
-		rotateLogIfTooBig($pharErrLogPath, $logArchiveDir, $pharErrLogPos);
 		rotateLogIfTooBig($workerLogPath, $logArchiveDir, $workerLogPos);
 	}
 
