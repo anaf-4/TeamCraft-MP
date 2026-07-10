@@ -54,11 +54,11 @@ sudo chown -R 1000:1000 <추가한 파일/폴더>
 - `/plugins` - 읽기 전용, 플러그인 로드 위치
 
 ## 고급: phar에 인자 전달하기
-`POCKETMINE_ARGS` 환경변수가 `PocketMine-MP.phar` 실행 시 그대로 전달됩니다.
+`POCKETMINE_ARGS` 환경변수가 `TeamCraft-MP.phar` 실행 시 그대로 전달됩니다.
 
 ## 참고: 삼각 멀티프로세스 런처와 Docker
 
-TeamCraft-MP의 `PocketMine-MP.php` 런처(NetworkWorker + phar 동시 구동)는 아직 이 Docker 이미지에 통합되지 않았습니다. 현재 이미지는 원본과 동일하게 `PocketMine-MP.phar`를 직접 실행하는 방식입니다.
+TeamCraft-MP의 `PocketMine-MP.php` 런처(NetworkWorker + phar 동시 구동)는 아직 이 Docker 이미지에 통합되지 않았습니다. 현재 이미지는 원본과 동일하게 `TeamCraft-MP.phar`를 직접 실행하는 방식입니다.
 
 ## 이미지 빌드하기
-Dockerfile은 `PocketMine-MP.phar` 빌드 시 git 해시 메타데이터를 채우기 위해 `GIT_HASH` build-arg가 필요합니다. 이는 `/version`, 크래시 리포트, 로그 등에 정확한 서버 버전이 표시되도록 하기 위함입니다.
+Dockerfile은 `TeamCraft-MP.phar` 빌드 시 git 해시 메타데이터를 채우기 위해 `GIT_HASH` build-arg가 필요합니다. 이는 `/version`, 크래시 리포트, 로그 등에 정확한 서버 버전이 표시되도록 하기 위함입니다.

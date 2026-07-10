@@ -3,11 +3,11 @@
 /**
  * TeamCraft-MP Triangle Multi-Process Launcher
  *
- * 마스터 프로세스: 단일 CMD 창으로 NetworkWorker + PocketMine-MP.phar를 자식 프로세스로 구동합니다.
+ * 마스터 프로세스: 단일 CMD 창으로 NetworkWorker + TeamCraft-MP.phar를 자식 프로세스로 구동합니다.
  *
  * 중요한 설계 결정 (아키텍처 노트):
  * -----------------------------------------------------------------------
- * PocketMine-MP.phar는 STDIN으로 "게임 네트워크 패킷"을 받지 않습니다.
+ * TeamCraft-MP.phar는 STDIN으로 "게임 네트워크 패킷"을 받지 않습니다.
  * phar 내부의 RakLib 스레드가 자체적으로 UDP 소켓을 여는 구조이기 때문에,
  * 외부에서 패킷을 주입할 훅이 존재하지 않습니다. STDIN/STDOUT은 콘솔
  * 명령어(관리자 커맨드) 용도로만 사용됩니다.
@@ -231,7 +231,7 @@ function shutdownAll(): void {
 	$shuttingDown = true;
 	fwrite(STDOUT, "\n[Master] 종료 신호 수신, 자식 프로세스를 정리합니다...\n");
 
-	foreach ([[$pharProc, $pharPipes, "PocketMine-MP.phar"], [$networkWorkerProc, $networkWorkerPipes, "NetworkWorker"]] as [$proc, $pipes, $label]) {
+	foreach ([[$pharProc, $pharPipes, "TeamCraft-MP.phar"], [$networkWorkerProc, $networkWorkerPipes, "NetworkWorker"]] as [$proc, $pipes, $label]) {
 		if ($proc === null) {
 			continue;
 		}
@@ -248,7 +248,7 @@ function shutdownAll(): void {
 	// 짧게 유예 시간을 준 뒤 강제 종료
 	usleep(1_500_000);
 
-	foreach ([[$pharProc, $pharPipes, "PocketMine-MP.phar"], [$networkWorkerProc, $networkWorkerPipes, "NetworkWorker"]] as [$proc, $pipes, $label]) {
+	foreach ([[$pharProc, $pharPipes, "TeamCraft-MP.phar"], [$networkWorkerProc, $networkWorkerPipes, "NetworkWorker"]] as [$proc, $pipes, $label]) {
 		if ($proc === null) {
 			continue;
 		}
@@ -355,7 +355,7 @@ if (stripos(PHP_OS, "WIN") === 0) {
 // NetworkWorker가 내부 소켓을 준비할 시간을 살짝 줌
 usleep(300_000);
 
-// 2) PocketMine-MP.phar 기동 - server.properties는 원본 그대로 두고,
+// 2) TeamCraft-MP.phar 기동 - server.properties는 원본 그대로 두고,
 //    ServerConfigGroup의 getopt() 기반 오버라이드로 포트만 내부용으로 바꿈.
 //    (src/ServerConfigGroup.php: getopt("", ["server-port::"]) 확인됨)
 //    이 방식은 phar 소스를 전혀 건드리지 않는, pmmp가 공식 지원하는 오버라이드 경로임.
@@ -363,7 +363,7 @@ usleep(300_000);
 	$phpBinary,
 	"-d",
 	"phar.readonly=0",
-	$rootDir . "/PocketMine-MP.phar",
+	$rootDir . "/TeamCraft-MP.phar",
 	"--no-wizard",
 	"--server-port=" . INTERNAL_PORT_V4,
 	"--server-portv6=" . INTERNAL_PORT_V6,
@@ -394,7 +394,7 @@ while (!$shuttingDown) {
 		break;
 	}
 	if (!($pharStatus["running"] ?? false)) {
-		fwrite(STDERR, "[Master] PocketMine-MP.phar가 예기치 않게 종료됨 (exit code: " . ($pharStatus["exitcode"] ?? "?") . ")\n");
+		fwrite(STDERR, "[Master] TeamCraft-MP.phar가 예기치 않게 종료됨 (exit code: " . ($pharStatus["exitcode"] ?? "?") . ")\n");
 		shutdownAll();
 		break;
 	}

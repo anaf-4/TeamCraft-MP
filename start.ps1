@@ -21,10 +21,10 @@ if($php -ne ""){
 }
 
 if($file -eq ""){
-	if(Test-Path "PocketMine-MP.phar"){
-	    $file = "PocketMine-MP.phar"
+	if(Test-Path "TeamCraft-MP.phar"){
+	    $file = "TeamCraft-MP.phar"
 	}else{
-	    echo "PocketMine-MP.phar not found"
+	    echo "TeamCraft-MP.phar not found"
 	    echo "Downloads can be found at https://github.com/pmmp/PocketMine-MP/releases"
 	    pause
 	    exit 1

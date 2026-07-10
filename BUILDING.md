@@ -26,13 +26,13 @@ composer install
 
 `composer install`에 `--no-dev --classmap-authoritative` 플래그를 추가하면 빌드 크기가 줄고 오토로딩 속도가 빨라집니다.
 
-## `PocketMine-MP.phar` 빌드하기
+## `TeamCraft-MP.phar` 빌드하기
 
 ```bash
 php -d phar.readonly=0 build/server-phar.php
 ```
 
-현재 작업 폴더에 `PocketMine-MP.phar`가 생성됩니다.
+현재 작업 폴더에 `TeamCraft-MP.phar`가 생성됩니다.
 
 ## 소스 코드로 바로 실행하기
 

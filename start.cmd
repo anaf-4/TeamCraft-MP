@@ -22,10 +22,10 @@ if "%PHP_BINARY%"=="" (
 	exit 1
 )
 
-if exist PocketMine-MP.phar (
-	set POCKETMINE_FILE=PocketMine-MP.phar
+if exist TeamCraft-MP.phar (
+	set POCKETMINE_FILE=TeamCraft-MP.phar
 ) else (
-	echo PocketMine-MP.phar not found
+	echo TeamCraft-MP.phar not found
 	echo Downloads can be found at https://github.com/pmmp/PocketMine-MP/releases
 	pause
 	exit 1
