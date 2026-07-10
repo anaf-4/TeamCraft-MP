@@ -314,6 +314,9 @@ function decodeWorkerFrames(string &$buffer): array {
 $workerReadBuffer = "";
 
 function printWorkerMessage(array $msg): void {
+	if ($msg["type"] === 1) {
+		return;
+	}
 	$label = match ($msg["type"]) {
 		1 => "STATS",
 		2 => "ERROR",
