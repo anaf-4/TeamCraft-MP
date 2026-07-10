@@ -346,7 +346,7 @@ if (stripos(PHP_OS, "WIN") === 0) {
 // 1) NetworkWorker 기동 - 공개 포트(IPv4/IPv6)를 선점하고 phar의 내부 포트로 릴레이
 [$networkWorkerProc, $networkWorkerPipes] = spawnProcess([
 	$phpBinary,
-	$rootDir . "/src/network/NetworkWorker.php",
+	$rootDir . "/NetworkWorker.php",
 	"--public-port=" . $publicPort,
 	"--internal-host=" . INTERNAL_HOST,
 	"--internal-port=" . INTERNAL_PORT_V4,
